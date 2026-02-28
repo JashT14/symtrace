@@ -1,0 +1,15 @@
+[build]
+# Use all CPU cores for parallel compilation
+jobs = -1
+
+[profile.release]
+# Optimize for speed and size
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+# Smaller debug info in release builds (faster linker)
+[profile.release.package."*"]
+opt-level = 3

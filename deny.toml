@@ -1,0 +1,57 @@
+# cargo-deny configuration for symtrace
+# Run with: cargo deny check
+# Install with: cargo install cargo-deny
+
+[graph]
+targets = []
+all-features = false
+no-default-features = false
+
+[output]
+feature-depth = 1
+
+# ── Advisories (cargo audit) ─────────────────────────────────────────
+[advisories]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "warn"
+ignore = []
+
+# ── Licenses ─────────────────────────────────────────────────────────
+[licenses]
+unlicensed = "deny"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "BSL-1.0",
+    "OpenSSL",
+    "CC0-1.0",
+]
+copyleft = "warn"
+confidence-threshold = 0.8
+
+[licenses.private]
+ignore = false
+registries = []
+
+# ── Bans (supply chain hardening) ────────────────────────────────────
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+# ── Sources (registry pinning) ───────────────────────────────────────
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
