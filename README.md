@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="vscode-symtrace/media/symtrace-logo.png" alt="symtrace logo" width="400">
+</p>
+
 # symtrace
 
 A **deterministic semantic diff engine** written in Rust that compares two Git commits using **AST-based structural analysis** instead of traditional line-based text diff.
@@ -70,7 +74,7 @@ Requires [Rust](https://www.rust-lang.org/tools/install) (edition 2021+) and a C
 
 ```bash
 # From source
-git clone https://github.com/nicktretyakov/symtrace.git
+git clone https://github.com/JashT14/symtrace.git
 cd symtrace
 cargo install --path .
 
@@ -136,6 +140,41 @@ symtrace . HEAD~5 HEAD --logic-only --json
 # Strict resource limits for untrusted repos
 symtrace . HEAD~1 HEAD --max-file-size 1048576 --max-ast-nodes 50000 --parse-timeout-ms 500
 ```
+
+---
+
+## VS Code Extension
+
+**[Symtrace for VS Code](vscode-symtrace/)** brings semantic diff analysis directly into your editor.
+
+```
+Activity Bar → Symtrace → Compare Two Commits → See what semantically changed
+```
+
+### Highlights
+
+- **Interactive commit picker** — select commits from your git history via QuickPick
+- **Side-by-side diff views** — click any operation to see old vs new file content
+- **Inline editor decorations** — `[INSERTED]`, `[DELETED]`, `[MODIFIED]`, `[MOVED]`, `[RENAMED]` annotations
+- **Full webview report** — collapsible file cards with similarity bars, cross-file events, and classification badge
+- **Sidebar tree view** — browse operations by file with summary, refactor patterns, and performance metrics
+- **Auto-download** — 4-tier binary resolution (config path → PATH → cached → GitHub releases)
+
+### Quick Install
+
+A. Install the extension from the VS Code Marketplace, or 
+
+B. Build locally using the following commands:
+
+```bash
+cd vscode-symtrace
+npm install && npm run build
+npx @vscode/vsce package     # produces .vsix
+```
+
+Then install the `.vsix` via **Extensions: Install from VSIX** in VS Code.
+
+See the [extension README](vscode-symtrace/README.md) for full documentation — settings, commands, platform support, and architecture.
 
 ---
 
@@ -368,6 +407,10 @@ See [benchmarks_v5.md](benchmarks_v5.md) for complete data, historical progressi
 - **Bounded deserialization** — AST cache limited to 20 MiB with version/integrity checks
 - **Pinned dependencies** — all versions exactly pinned (`=x.y.z`)
 - **Supply chain hardening** — `cargo-deny` configuration in [deny.toml](deny.toml)
+- **Cache directory permissions** — restricted to owner-only (`0o700`) on Unix to prevent shared-system leakage
+- **Path validation** — repository path canonicalized and verified as a directory before any git access
+- **Poison-safe mutexes** — all cache mutexes recover gracefully from thread panics via `unwrap_or_else`
+- **Dynamic CLI version** — derived from `Cargo.toml` via `env!("CARGO_PKG_VERSION")` to prevent version mismatch
 
 See [SECURITY.md](SECURITY.md) for the full security audit.
 

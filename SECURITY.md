@@ -1,6 +1,6 @@
 # symtrace Security Policy
 
-**Last audited:** 2026-02-28
+**Last audited:** 2026-03-14
 **Audit scope:** All 16 source files (src/*.rs) + Cargo.toml — full manual review
 
 ---
@@ -20,9 +20,11 @@ Rust code**, and processes data **only as explicitly requested** by the user.
 | External process spawning | **None** — no `std::process::Command` |
 | Unsafe Rust code | **Denied** — `unsafe_code = "deny"` enforced in `Cargo.toml` lints |
 | File writes outside cache | **None** — writes only to `$XDG_CACHE_HOME/symtrace/<repo_hash>/` |
+| Cache directory permissions | **Restricted** — Unix: `0o700` (owner-only); prevents shared-system leakage |
 | Cache deserialization | **Bounded** — 20 MiB limit, versioned envelope with integrity checks |
 | Parser resources | **Guarded** — configurable limits on file size, node count, depth, timeout |
 | Incremental parsing | **Isolated** — tree-sitter Trees cached in-memory only; no disk serialisation |
+| Repository path validation | **Enforced** — canonicalized + directory check before git2 access |
 
 ---
 
@@ -93,15 +95,14 @@ envelope.  Cache data is:
 | **Description** | `bincode` v1's `deserialize` could allocate large amounts of memory if a crafted input specified large `Vec` or `String` lengths. |
 | **Mitigation applied** | All deserialization uses `bincode::options().with_limit(20_971_520)` (20 MiB cap). Payloads exceeding this limit cause a deserialization error, which is treated as a cache miss and the corrupt file is removed. |
 
-### 2.3 Mutex `unwrap()` on Lock
+### 2.3 Mutex `unwrap()` on Lock — **RESOLVED**
 
 | Field | Value |
 |-------|-------|
-| **Severity** | Low |
-| **Location** | `src/ast_cache.rs` — 4 calls; `src/incremental_parse.rs` — 2 calls to `.lock().unwrap()` |
+| **Severity** | ~~Low~~ → **Resolved** |
+| **Location** | `src/ast_cache.rs` — 4 calls; `src/incremental_parse.rs` — 3 calls |
 | **Description** | If a thread panics while holding a cache mutex (`AstCache` or `TreeCache`), the mutex becomes poisoned and subsequent `unwrap()` calls will panic. |
-| **Impact** | Low — workload is CPU-bound parsing with structured error handling. Thread panics during cache access are unlikely. |
-| **Mitigation** | Graceful recovery via `.lock().unwrap_or_else(\|e\| e.into_inner())` is planned for both caches. |
+| **Mitigation applied** | All mutex acquisitions in both `AstCache` and `TreeCache` now use `.lock().unwrap_or_else(\|e\| e.into_inner())`, recovering gracefully from poisoned mutexes instead of panicking. |
 
 ### 2.4 Repository Path — **MITIGATED**
 
@@ -130,6 +131,33 @@ envelope.  Cache data is:
 | **Description** | The `TreeCache` stores tree-sitter `Tree` objects in a `Mutex<LruCache<String, Tree>>` (capacity 128). These trees are kept **only in process memory** and are never serialised to disk. |
 | **Security properties** | (1) No disk persistence — trees exist only during program execution; (2) No deserialization surface — trees are computed via `tree-sitter::Parser`, not loaded from external storage; (3) Mutex-protected — concurrent access is serialised; (4) Bounded capacity — LRU eviction at 128 entries prevents unbounded memory growth; (5) Edit computation is pure arithmetic — `compute_edit()` performs common-prefix/suffix byte comparison with no I/O or allocations beyond a single `InputEdit` struct. |
 | **Impact** | No security impact. The TreeCache introduces no new file I/O, no new environment variable access, and no new attack surface. |
+
+### 2.7 Cache Directory Permissions — **RESOLVED**
+
+| Field | Value |
+|-------|-------|
+| **Severity** | ~~Low~~ → **Resolved** |
+| **Location** | `src/ast_cache.rs` — `new()` method |
+| **Description** | The cache directory was created with default OS permissions, which on shared systems could allow other users to read cached AST data (containing source code). |
+| **Mitigation applied** | On Unix systems, the cache directory permissions are now explicitly set to `0o700` (owner-only read/write/execute) immediately after creation. This prevents other users from listing or reading cached files. |
+
+### 2.8 Repository Path Directory Validation — **RESOLVED**
+
+| Field | Value |
+|-------|-------|
+| **Severity** | ~~Informational~~ → **Resolved** |
+| **Location** | `src/main.rs` — after `canonicalize()` |
+| **Description** | The repository path was passed to `git2::Repository::open()` without verifying it was a directory. Passing a regular file path could produce confusing error messages. |
+| **Mitigation applied** | After canonicalization, an explicit `is_dir()` check rejects non-directory paths with a clear error message before any git operations commence. |
+
+### 2.9 CLI Version Hardcoding — **RESOLVED**
+
+| Field | Value |
+|-------|-------|
+| **Severity** | ~~Informational~~ → **Resolved** |
+| **Location** | `src/cli.rs` — `#[command(version)]` |
+| **Description** | The CLI version was hardcoded as `"0.1.0"` instead of being derived from `Cargo.toml`, causing version output to be stale. |
+| **Mitigation applied** | Replaced with `env!("CARGO_PKG_VERSION")` to always reflect the actual crate version. |
 
 ---
 

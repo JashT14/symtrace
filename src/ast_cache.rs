@@ -69,6 +69,13 @@ impl AstCache {
     pub fn new(cache_dir: Option<PathBuf>) -> Self {
         let disk_dir = cache_dir.and_then(|dir| {
             fs::create_dir_all(&dir).ok()?;
+            // Restrict directory permissions on Unix to owner-only (0o700)
+            // to prevent other users on shared systems from reading cached ASTs.
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let _ = fs::set_permissions(&dir, fs::Permissions::from_mode(0o700));
+            }
             Some(dir)
         });
 

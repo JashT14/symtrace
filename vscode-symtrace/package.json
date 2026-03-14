@@ -1,0 +1,157 @@
+{
+  "name": "symtrace-vscode",
+  "displayName": "Symtrace for VS Code",
+  "description": "Semantic diff viewer powered by symtrace AST analysis",
+  "version": "0.2.0",
+  "publisher": "JashT14",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JashT14/symtrace"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "SCM Providers"
+  ],
+  "activationEvents": [
+    "workspaceContains:.git"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "media/symtrace-logo.png",
+  "contributes": {
+    "commands": [
+      {
+        "command": "symtrace.compareTwoCommits",
+        "title": "Symtrace: Compare Two Commits",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "symtrace.compareWithParent",
+        "title": "Symtrace: Compare Commit with Its Parent",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "symtrace.refreshTreeView",
+        "title": "Symtrace: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "symtrace.clearResults",
+        "title": "Symtrace: Clear Results",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "symtrace.showOperationDiff",
+        "title": "Symtrace: Show Operation Diff"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "symtrace",
+          "title": "Symtrace",
+          "icon": "media/symtrace-icon-512.png"
+        }
+      ]
+    },
+    "views": {
+      "symtrace": [
+        {
+          "id": "symtrace.resultsTree",
+          "name": "Diff Results"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "symtrace.resultsTree",
+        "contents": "Semantic diff powered by AST analysis.\nCompare Git commits to see what changed at the code structure level.\n[Compare Two Commits](command:symtrace.compareTwoCommits)\n[Compare Commit with Parent](command:symtrace.compareWithParent)\n\nSupported: Rust, JavaScript, TypeScript, Python, Java",
+        "when": "!symtrace.hasResults"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "symtrace.compareTwoCommits",
+          "when": "view == symtrace.resultsTree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "symtrace.compareWithParent",
+          "when": "view == symtrace.resultsTree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "symtrace.refreshTreeView",
+          "when": "view == symtrace.resultsTree && symtrace.hasResults",
+          "group": "navigation@3"
+        },
+        {
+          "command": "symtrace.clearResults",
+          "when": "view == symtrace.resultsTree && symtrace.hasResults",
+          "group": "navigation@4"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Symtrace",
+      "properties": {
+        "symtrace.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Explicit path to the symtrace binary. Leave empty for auto-detection."
+        },
+        "symtrace.logicOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ignore comments and whitespace-only changes (--logic-only)."
+        },
+        "symtrace.maxFileSize": {
+          "type": "number",
+          "default": 5242880,
+          "description": "Maximum file size in bytes before skipping (--max-file-size). Default: 5 MiB."
+        },
+        "symtrace.maxAstNodes": {
+          "type": "number",
+          "default": 200000,
+          "description": "Maximum AST nodes per file (--max-ast-nodes). Default: 200,000."
+        },
+        "symtrace.maxRecursionDepth": {
+          "type": "number",
+          "default": 2048,
+          "description": "Maximum parser recursion depth (--max-recursion-depth). Default: 2,048."
+        },
+        "symtrace.parseTimeoutMs": {
+          "type": "number",
+          "default": 2000,
+          "description": "Per-file parse timeout in ms (--parse-timeout-ms). 0 disables. Default: 2,000."
+        },
+        "symtrace.noIncremental": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable incremental parsing (--no-incremental)."
+        },
+        "symtrace.autoDownloadBinary": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically download symtrace from GitHub releases if not found in PATH."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  }
+}

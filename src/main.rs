@@ -34,6 +34,15 @@ fn main() -> Result<()> {
         .with_context(|| format!("Failed to resolve repository path: '{}'", args.repo_path))?;
     // On Windows, strip the \\?\ UNC prefix that canonicalize() adds
     let canonical_repo = strip_unc_prefix(canonical_repo);
+
+    // Validate that the resolved path is a directory
+    if !canonical_repo.is_dir() {
+        anyhow::bail!(
+            "Repository path '{}' is not a directory",
+            canonical_repo.display()
+        );
+    }
+
     let repo_path_str = canonical_repo.to_string_lossy().to_string();
 
     // ── External cache directory (isolated from the repo tree) ─────

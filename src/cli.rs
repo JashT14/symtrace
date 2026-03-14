@@ -2,7 +2,7 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(name = "symtrace")]
-#[command(version = "0.1.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Semantic diff engine using AST-based structural analysis")]
 #[command(long_about = "SymTrace compares two commits of the same repository using \
     AST-based structural analysis instead of line-based text diff. \
