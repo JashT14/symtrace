@@ -61,7 +61,8 @@
       "symtrace": [
         {
           "id": "symtrace.resultsTree",
-          "name": "Diff Results"
+          "name": "Diff Results",
+          "icon": "media/symtrace-results-icon.png"
         }
       ]
     },
